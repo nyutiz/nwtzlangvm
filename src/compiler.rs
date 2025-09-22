@@ -20,6 +20,7 @@ impl Compiler {
     }
 
     pub fn compile(&mut self, program: Program) -> Chunk {
+        // First pass: collect function declarations
         for stmt in &program.body {
             if let Some(func_decl) = stmt.as_any().downcast_ref::<FunctionDeclaration>() {
                 let start_addr = self.chunk.instructions.len();
@@ -66,16 +67,8 @@ impl Compiler {
 
             NodeType::Identifier => {
                 let ident = stmt.as_any().downcast_ref::<IdentifierExpr>().unwrap();
-
-
-                // temporary error solver for no resolve for null
-                if ident.name == "null" {
-                    self.chunk.add_instruction(Instruction::LoadNull);
-                } else {
-                    self.chunk.add_instruction(Instruction::LoadVar(ident.name.clone()));
-                }
+                self.compile_identifier(&ident.name);
             }
-
 
             NodeType::BinaryExpression => {
                 let binary = stmt.as_any().downcast_ref::<BinaryExpr>().unwrap();
@@ -153,22 +146,12 @@ impl Compiler {
                 if let Some(ident) = assignment.assigne.as_any().downcast_ref::<IdentifierExpr>() {
                     self.chunk.add_instruction(Instruction::StoreVar(ident.name.clone()));
                 } else {
-
+                    panic!("Invalid assignment target");
                 }
             }
 
             NodeType::CallExpr => {
                 let call = stmt.as_any().downcast_ref::<CallExpr>().unwrap();
-
-                //if let Some(callee_ident) = call.caller.as_any().downcast_ref::<IdentifierExpr>() {
-                //    if callee_ident.name == "log" {
-                //        for arg in &call.args {
-                //            self.compile_stmt(arg.clone());
-                //            self.chunk.add_instruction(Instruction::Print);
-                //        }
-                //        return;
-                //    }
-                //}
 
                 for arg in &call.args {
                     self.compile_stmt(arg.clone());
@@ -176,7 +159,6 @@ impl Compiler {
                 self.compile_stmt(call.caller.clone());
                 self.chunk.add_instruction(Instruction::Call(call.args.len()));
             }
-
 
             NodeType::FunctionDeclaration => {
                 let func_decl = stmt.as_any().downcast_ref::<FunctionDeclaration>().unwrap();
@@ -190,7 +172,7 @@ impl Compiler {
                     0,
                 ));
 
-                let jump_to_end_idx = self.chunk.add_instruction(Instruction::Jump(0)); // patch plus bas
+                let jump_to_end_idx = self.chunk.add_instruction(Instruction::Jump(0));
 
                 debug_assert_eq!(self.chunk.instructions.len(), start);
                 for s in &func_decl.body {
@@ -206,7 +188,7 @@ impl Compiler {
                 {
                     *end_slot = end;
                 } else {
-                    unreachable!("def_idx doit pointer sur DefineFunction");
+                    unreachable!("def_idx should point to DefineFunction");
                 }
 
                 self.chunk.patch_jump(jump_to_end_idx, end);
@@ -216,7 +198,6 @@ impl Compiler {
                     (func_decl.parameters.clone(), start, end),
                 );
             }
-
 
             NodeType::IfStatement => {
                 let if_stmt = stmt.as_any().downcast_ref::<IfStatement>().unwrap();
@@ -299,9 +280,18 @@ impl Compiler {
 
                 for property in &obj.properties {
                     if let Some(value) = &property.value {
-                        self.compile_stmt(value.clone());
-                        self.chunk.add_instruction(Instruction::SetProperty(property.key.clone()));
+                        // Check if the value is a function declaration
+                        if let Some(func_decl) = value.as_any().downcast_ref::<FunctionDeclaration>() {
+                            self.compile_function_for_object(func_decl);
+                        } else {
+                            self.compile_stmt(value.clone());
+                        }
+                    } else {
+                        // Property declared without value - set to null
+                        self.chunk.add_instruction(Instruction::LoadNull);
                     }
+
+                    self.chunk.add_instruction(Instruction::SetProperty(property.key.clone()));
                 }
             }
 
@@ -322,5 +312,77 @@ impl Compiler {
                 println!("Warning: Unhandled node type: {:?}", stmt.kind());
             }
         }
+    }
+
+    // Helper method to compile identifiers with proper handling of builtins
+    fn compile_identifier(&mut self, name: &str) {
+        match name {
+            "null" => { self.chunk.add_instruction(Instruction::LoadNull); },
+            "true" => { self.chunk.add_instruction(Instruction::LoadBool(true)); },
+            "false" => { self.chunk.add_instruction(Instruction::LoadBool(false)); },
+            // Skip type names - they shouldn't be treated as variables
+            "String" | "Integer" | "Boolean" | "Object" | "Array" | "Function" | "NativeFn" => {
+                self.chunk.add_instruction(Instruction::LoadNull);
+            },
+            _ => { self.chunk.add_instruction(Instruction::LoadVar(name.to_string())); },
+        };
+    }
+
+    // Helper method to compile functions that are properties of objects
+    fn compile_function_for_object(&mut self, func_decl: &FunctionDeclaration) {
+        let start = self.chunk.instructions.len() + 2;
+
+        let def_idx = self.chunk.add_instruction(Instruction::DefineFunction(
+            func_decl.name.clone(),
+            func_decl.parameters.clone(),
+            start,
+            0,
+        ));
+
+        let jump_to_end_idx = self.chunk.add_instruction(Instruction::Jump(0));
+
+        debug_assert_eq!(self.chunk.instructions.len(), start);
+
+        // Save current context
+        let saved_locals = self.locals.clone();
+        let saved_local_count = self.local_count;
+
+        // Create new scope for function parameters
+        for (i, param) in func_decl.parameters.iter().enumerate() {
+            self.locals.insert(param.clone(), i);
+        }
+        self.local_count = func_decl.parameters.len();
+
+        for s in &func_decl.body {
+            self.compile_stmt(s.clone());
+        }
+
+        self.chunk.add_instruction(Instruction::Return);
+
+        // Restore context
+        self.locals = saved_locals;
+        self.local_count = saved_local_count;
+
+        let end = self.chunk.instructions.len();
+
+        if let Instruction::DefineFunction(_, _, _, ref mut end_slot) =
+            self.chunk.instructions[def_idx]
+        {
+            *end_slot = end;
+        } else {
+            unreachable!("def_idx should point to DefineFunction");
+        }
+
+        self.chunk.patch_jump(jump_to_end_idx, end);
+
+        self.function_table.insert(
+            func_decl.name.clone(),
+            (func_decl.parameters.clone(), start, end),
+        );
+
+        // The DefineFunction instruction already put the function in global scope,
+        // but for object property we need the function value on the stack
+        // Since DefineFunction stores globally, we can load it
+        self.chunk.add_instruction(Instruction::LoadVar(func_decl.name.clone()));
     }
 }

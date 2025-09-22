@@ -1,77 +1,10 @@
-Test = 5*5;
-
-fn say_caca(){
-    log("Swag");
-}
-
-if Test < 24 {
-    test = 10;
-} else {
-    test = 12;
-}
-
-
-
-a : String = "JE SUIS UN STR";
-a : Boolean = true;
-log(a);
-
-b: Boolean = true;
-b = false;
-log(b);
-
-c: Array = [54, "HEAAAAAAAAALLO"];
-log(c);
-
 obj truc {
-    age: "544654654654",
     name: String,
-    c: c,
-};
-log(truc.c);
+    age: Integer = 25,
 
-truc.c = "3ADHAJF";
-
-log(truc.c);
-
-fn test (a){
-    log(a);
+    fn greet() {
+        log("Hello!");
+    }
 }
 
-test(1.54654654654 * 2);
-
-log(test);
-
-obj truc {
-    truc: "AAA",
-    fn hey(a){
-        log(a);
-    },
-};
-
-fn get(){
-    time()
-}
-
-h: String = "Hello World";
-
-truc.hey("aaaa");
-
-//log(system.config);
-gz = [10, 56, true, "AFAZF"];
-
-log(gz[2]);
-
-log(get());
-
-//system.log(system.config);
-truc.hey("a");
-log( system.value_type( truc.hey ) );
-
-dzgefs = input();
-
-if dzgefs == "a" {
-    log("aA");
-}
-
-log("AFAFA ! ", dzgefs);
+log(truc);
