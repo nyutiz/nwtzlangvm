@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::io;
+use std::{io};
 use crate::bytecode::{Chunk, Instruction};
 use nwtzlang::types::{ValueType, NullVal, IntegerVal, BooleanVal, ObjectVal, ArrayVal};
 use nwtzlang::runtime::RuntimeVal;
@@ -24,6 +24,7 @@ pub enum Value {
         func: Arc<dyn Fn(&mut VM, Vec<Value>) -> Result<Value, String> + Send + Sync>
     },
 }
+
 
 impl Debug for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -47,6 +48,20 @@ impl Debug for Value {
 }
 
 impl Value {
+
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            Value::Null => "Null",
+            Value::Boolean(_) => "Boolean",
+            Value::Integer(_) => "Integer",
+            Value::Float(_) => "Float",
+            Value::String(_) => "String",
+            Value::Array(_) => "Array",
+            Value::Object(_) => "Object",
+            Value::Function { .. } => "Function",
+            Value::NativeFunction { .. } => "NativeFunction",
+        }
+    }
     pub fn to_runtime_val(&self) -> Box<dyn RuntimeVal + Send + Sync> {
         match self {
             Value::Null => Box::new(NullVal { r#type: Some(ValueType::Null) }),
@@ -177,6 +192,37 @@ impl VM {
                 Ok(Value::String(s.trim_end().to_string()))
             }),
         });
+
+        self.set_var(
+            "system",
+            Value::Object ({
+                let mut h:HashMap<String, Value> = HashMap::new();
+
+                h.insert("value_type".to_string(), Value::NativeFunction{
+                    name: "type".to_string(),
+                    func: Arc::new(|_vm: &mut VM, args: Vec<Value>| {
+                        if let Some(value) = args.first() {
+                            let type_name = match value {
+                                Value::Null => "Null",
+                                Value::Integer(_) => "Integer",
+                                Value::Float(_) => "Float",
+                                Value::Boolean(_) => "Boolean",
+                                Value::String(_) => "String",
+                                Value::Array(_) => "Array",
+                                Value::Object(_) => "Object",
+                                Value::Function(_, _, _, _) => "Function",
+                                Value::NativeFunction { .. } => "NativeFunction",
+                            };
+                            Ok(Value::String(type_name.to_string()))
+                        } else {
+                            Err("type() expects one argument".to_string())
+                        }
+                    }),
+                });
+
+                h
+            })
+        );
     }
 
     pub fn execute(&mut self, chunk: &Chunk) -> Result<Value, String> {
@@ -214,6 +260,15 @@ impl VM {
                     }
                 }
 
+                Instruction::Duplicate => {
+                    if let Some(value) = self.stack.last() {
+                        self.stack.push(value.clone());
+                    } else {
+                        return Err("Stack underflow in Duplicate".to_string());
+                    }
+                }
+
+
                 Instruction::StoreVar(name) => {
                     if let Some(value) = self.stack.pop() {
                         self.set_variable(name.clone(), value);
@@ -222,13 +277,7 @@ impl VM {
                     }
                 }
 
-                Instruction::DeclareVar(name, _type) => {
-                    if let Some(value) = self.stack.pop() {
-                        self.locals.last_mut().unwrap().insert(name.clone(), value);
-                    } else {
-                        return Err("Stack underflow in DeclareVar".to_string());
-                    }
-                }
+
 
                 Instruction::Add => {
                     let (b, a) = self.pop_two()?;
@@ -490,6 +539,14 @@ impl VM {
                             self.stack.push(Value::Object(map));
                         }
                         (o, i) => return Err(format!("SetIndex: unsupported (object={:?}, index={:?})", o, i)),
+                    }
+                }
+
+                Instruction::DeclareVar(name, _type) => {
+                    if let Some(value) = self.stack.pop() {
+                        self.locals.last_mut().unwrap().insert(name.clone(), value);
+                    } else {
+                        return Err("Stack underflow in DeclareVar".to_string());
                     }
                 }
 

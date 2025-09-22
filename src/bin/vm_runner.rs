@@ -1,6 +1,7 @@
 use std::env;
 
 use nwtzlangvm::serialization::load_bytecode;
+use nwtzlangvm::Value;
 use nwtzlangvm::vm::VM;
 
 fn main() {
@@ -51,23 +52,24 @@ fn main() {
 
 fn vm_value_to_string(value: &nwtzlangvm::vm::Value) -> String {
     match value {
-        nwtzlangvm::vm::Value::Null => "null".to_string(),
-        nwtzlangvm::vm::Value::Integer(i) => i.to_string(),
-        nwtzlangvm::vm::Value::Float(f) => f.to_string(),
-        nwtzlangvm::vm::Value::Boolean(b) => b.to_string(),
-        nwtzlangvm::vm::Value::String(s) => format!("\"{}\"", s),
-        nwtzlangvm::vm::Value::Array(arr) => {
+        Value::Null => "null".to_string(),
+        Value::Integer(i) => i.to_string(),
+        Value::Float(f) => f.to_string(),
+        Value::Boolean(b) => b.to_string(),
+        Value::String(s) => format!("\"{}\"", s),
+        Value::Array(arr) => {
             let elements: Vec<String> = arr.iter()
                 .map(vm_value_to_string)
                 .collect();
             format!("[{}]", elements.join(", "))
         }
-        nwtzlangvm::vm::Value::Object(obj) => {
+        Value::Object(obj) => {
             let props: Vec<String> = obj.iter()
                 .map(|(k, v)| format!("{}: {}", k, vm_value_to_string(v)))
                 .collect();
             format!("{{{}}}", props.join(", "))
         }
-        nwtzlangvm::vm::Value::Function(name, _, _, _) => format!("<function {}>", name),
+        Value::Function(name, _, _, _) => format!("<function {}>", name),
+        Value::NativeFunction { name, func: _ } => format!("<native {}>", name),
     }
 }

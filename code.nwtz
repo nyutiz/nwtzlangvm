@@ -1,10 +1,9 @@
-obj truc {
-    name: String,
-    age: Integer = 25,
 
-    fn greet() {
-        log("Hello!");
-    }
+a = null;
+
+fn hello(){
+
 }
 
-log(truc);
+log(system.value_type(hello));
+

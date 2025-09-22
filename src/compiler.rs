@@ -20,7 +20,6 @@ impl Compiler {
     }
 
     pub fn compile(&mut self, program: Program) -> Chunk {
-        // First pass: collect function declarations
         for stmt in &program.body {
             if let Some(func_decl) = stmt.as_any().downcast_ref::<FunctionDeclaration>() {
                 let start_addr = self.chunk.instructions.len();
@@ -278,16 +277,19 @@ impl Compiler {
 
                 self.chunk.add_instruction(Instruction::CreateObject);
 
-                for property in &obj.properties {
+                for (i, property) in obj.properties.iter().enumerate() {
+
+                    if i > 0 {
+                        self.chunk.add_instruction(Instruction::Duplicate);
+                    }
+
                     if let Some(value) = &property.value {
-                        // Check if the value is a function declaration
                         if let Some(func_decl) = value.as_any().downcast_ref::<FunctionDeclaration>() {
                             self.compile_function_for_object(func_decl);
                         } else {
                             self.compile_stmt(value.clone());
                         }
                     } else {
-                        // Property declared without value - set to null
                         self.chunk.add_instruction(Instruction::LoadNull);
                     }
 
@@ -308,19 +310,19 @@ impl Compiler {
                 }
             }
 
+
+
             _ => {
                 println!("Warning: Unhandled node type: {:?}", stmt.kind());
             }
         }
     }
 
-    // Helper method to compile identifiers with proper handling of builtins
     fn compile_identifier(&mut self, name: &str) {
         match name {
             "null" => { self.chunk.add_instruction(Instruction::LoadNull); },
             "true" => { self.chunk.add_instruction(Instruction::LoadBool(true)); },
             "false" => { self.chunk.add_instruction(Instruction::LoadBool(false)); },
-            // Skip type names - they shouldn't be treated as variables
             "String" | "Integer" | "Boolean" | "Object" | "Array" | "Function" | "NativeFn" => {
                 self.chunk.add_instruction(Instruction::LoadNull);
             },
@@ -328,7 +330,6 @@ impl Compiler {
         };
     }
 
-    // Helper method to compile functions that are properties of objects
     fn compile_function_for_object(&mut self, func_decl: &FunctionDeclaration) {
         let start = self.chunk.instructions.len() + 2;
 
@@ -343,11 +344,9 @@ impl Compiler {
 
         debug_assert_eq!(self.chunk.instructions.len(), start);
 
-        // Save current context
         let saved_locals = self.locals.clone();
         let saved_local_count = self.local_count;
 
-        // Create new scope for function parameters
         for (i, param) in func_decl.parameters.iter().enumerate() {
             self.locals.insert(param.clone(), i);
         }
@@ -359,7 +358,6 @@ impl Compiler {
 
         self.chunk.add_instruction(Instruction::Return);
 
-        // Restore context
         self.locals = saved_locals;
         self.local_count = saved_local_count;
 
@@ -380,9 +378,6 @@ impl Compiler {
             (func_decl.parameters.clone(), start, end),
         );
 
-        // The DefineFunction instruction already put the function in global scope,
-        // but for object property we need the function value on the stack
-        // Since DefineFunction stores globally, we can load it
         self.chunk.add_instruction(Instruction::LoadVar(func_decl.name.clone()));
     }
 }
