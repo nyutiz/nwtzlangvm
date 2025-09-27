@@ -188,8 +188,7 @@ impl From<SerializableInstruction> for crate::bytecode::Instruction {
             SerializableInstruction::JumpIfTrue(addr) => crate::bytecode::Instruction::JumpIfTrue(addr),
             SerializableInstruction::Call(n) => crate::bytecode::Instruction::Call(n),
             SerializableInstruction::Return => crate::bytecode::Instruction::Return,
-            SerializableInstruction::DefineFunction(name, params, start, end) =>
-                crate::bytecode::Instruction::DefineFunction(name, params, start, end),
+            SerializableInstruction::DefineFunction(name, params, start, end) => crate::bytecode::Instruction::DefineFunction(name, params, start, end),
             SerializableInstruction::CreateObject => crate::bytecode::Instruction::CreateObject,
             SerializableInstruction::CreateArray(n) => crate::bytecode::Instruction::CreateArray(n),
             SerializableInstruction::GetProperty(s) => crate::bytecode::Instruction::GetProperty(s),

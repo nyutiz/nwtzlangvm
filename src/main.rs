@@ -1,25 +1,29 @@
 use std::env;
 use std::fs;
-
 use nwtzlang::lexer::tokenize;
 use nwtzlang::parser::Parser;
-use crate::compiler::Compiler;
-use crate::vm::VM;
+use nwtzlangvm::{make_global_env, vm};
+use nwtzlangvm::compiler::Compiler;
+use nwtzlangvm::serialization::{load_bytecode, save_bytecode};
+use nwtzlangvm::vm::VM;
 
-mod bytecode;
-mod compiler;
-mod vm;
-mod serialization;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() != 2 {
-        eprintln!("Usage: {} <file.nwtz>", args[0]);
+    if args.len() < 2 || !&args[1].contains("nwtz") {
+        eprintln!("Usage : ");
+        eprintln!("         nwtz <file.nwtz>");
+        eprintln!("         nwtz-compile <file.nwtz>");
+        eprintln!("         nwtz-vm <file.nwtzc>");
         std::process::exit(1);
     }
 
-    let filename = &args[1];
+    let mut vm = VM::new();
+
+    make_global_env(&mut vm);
+
+    let filename = &args[2];
 
     let source = match fs::read_to_string(filename) {
         Ok(content) => content,
@@ -29,40 +33,111 @@ fn main() {
         }
     };
 
-    let tokens = tokenize(source);
+    match args[1].as_str() {
+        "nwtz" => {
 
-    let mut parser = Parser::new(tokens);
-    let ast = parser.produce_ast();
+            let tokens = tokenize(source);
 
-    let mut compiler = Compiler::new();
-    let chunk = compiler.compile(ast);
+            let mut parser = Parser::new(tokens);
+            let ast = parser.produce_ast();
 
-    if env::var("DEBUG_BYTECODE").is_ok() {
-        for (i, instruction) in chunk.instructions.iter().enumerate() {
-            println!("{:04}: {:?}", i, instruction);
-        }
-        println!();
-    }
+            let mut compiler = Compiler::new();
+            let chunk = compiler.compile(ast);
 
-    let mut vm = VM::new();
-
-    vm.make_global_env();
-
-    match vm.execute(&chunk) {
-        Ok(result) => {
-            match result {
-                vm::Value::Null => {},
-                _ => println!("Result: {}", vm_value_to_string(&result)),
+            if env::var("DEBUG_BYTECODE").is_ok() {
+                for (i, instruction) in chunk.instructions.iter().enumerate() {
+                    println!("{:04}: {:?}", i, instruction);
+                }
+                println!();
             }
+
+            match vm.execute(&chunk) {
+                Ok(result) => {
+                    match result {
+                        vm::Value::Null => {},
+                        _ => println!("Result: {}", vm_value_to_string(&result)),
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[X] Runtime error: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        },
+        "nwtz-compile" => {
+            //let input_file = &args[2];
+            let output_file = if args.len() == 4 {
+                args[3].clone()
+            } else {
+                filename.replace(".nwtz", ".nwtzc")
+            };
+
+            let tokens = tokenize(source);
+            let mut parser = Parser::new(tokens);
+            let ast = parser.produce_ast();
+
+            let mut compiler = Compiler::new();
+            let chunk = compiler.compile(ast);
+
+            match save_bytecode(&chunk, &output_file) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("Error saving bytecode: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        },
+        "nwtz-vm" => {
+            let bytecode_file = &args[2];
+
+            let chunk = match load_bytecode(bytecode_file) {
+                Ok(chunk) => chunk,
+                Err(e) => {
+                    eprintln!("Error loading bytecode from {}: {}", bytecode_file, e);
+                    std::process::exit(1);
+                }
+            };
+
+
+            if env::var("DEBUG_BYTECODE").is_ok() {
+                println!("\nBytecode instructions:");
+                for (i, instruction) in chunk.instructions.iter().enumerate() {
+                    println!("{:04}: {:?}", i, instruction);
+                }
+                println!();
+            }
+
+            match vm.execute(&chunk) {
+                Ok(result) => {
+
+                    match result {
+                        vm::Value::Null => {},
+                        _ => {
+                            println!("Result: {}", vm_value_to_string(&result));
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Runtime error: {}", e);
+                    std::process::exit(1);
+                }
+            }
+
+
         }
-        Err(e) => {
-            eprintln!("[X] Runtime error: {}", e);
-            std::process::exit(1);
+        _ => {
+            eprintln!("There is no {} , only:", &args[1]);
+            eprintln!("         nwtz <file.nwtz>");
+            eprintln!("         nwtz-compile <file.nwtz> <out.nwtzc>");
+            eprintln!("         nwtz-vm <file.nwtzc>");
         }
     }
+
+
+
 }
 
-fn vm_value_to_string(value: &crate::vm::Value) -> String {
+fn vm_value_to_string(value: &vm::Value) -> String {
     match value {
         vm::Value::Null => "null".to_string(),
         vm::Value::Integer(i) => i.to_string(),

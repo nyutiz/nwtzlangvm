@@ -2,7 +2,6 @@
 
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::{io};
 use crate::bytecode::{Chunk, Instruction};
 use nwtzlang::types::{ValueType, NullVal, IntegerVal, BooleanVal, ObjectVal, ArrayVal};
 use nwtzlang::runtime::RuntimeVal;
@@ -125,11 +124,11 @@ impl Value {
 }
 
 pub struct VM {
-    stack: Vec<Value>,
-    globals: HashMap<String, Value>,
-    locals: Vec<HashMap<String, Value>>,
-    ip: usize,
-    call_stack: Vec<usize>,
+    pub stack: Vec<Value>,
+    pub globals: HashMap<String, Value>,
+    pub locals: Vec<HashMap<String, Value>>,
+    pub ip: usize,
+    pub call_stack: Vec<usize>,
 }
 
 impl VM {
@@ -147,83 +146,6 @@ impl VM {
         self.globals.insert(name.into(), value);
     }
 
-    pub fn make_global_env(&mut self) {
-        self.set_var("null", Value::Null);
-        self.set_var("true", Value::Boolean(true));
-        self.set_var("false", Value::Boolean(false));
-
-        self.set_var("log", Value::NativeFunction {
-            name: "log".to_string(),
-            func: Arc::new(|vm: &mut VM, args: Vec<Value>| {
-                for v in args {
-                    println!("{}", vm.value_to_string(&v));
-                }
-                Ok(Value::Null)
-            }),
-        });
-
-        self.set_var("time", Value::NativeFunction {
-            name: "time".to_string(),
-            func: Arc::new(|_vm: &mut VM, _args: Vec<Value>| {
-                use std::time::{SystemTime, UNIX_EPOCH};
-                let secs = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as f64 / 1000.0;
-                Ok(Value::Float(secs))
-            }),
-        });
-
-        self.set_var("sleep", Value::NativeFunction {
-            name: "sleep".to_string(),
-            func: Arc::new(|_vm: &mut VM, args: Vec<Value>| {
-                let secs = match args.get(0) {
-                    Some(Value::Integer(i)) => *i as f64,
-                    Some(Value::Float(f)) => *f,
-                    _ => return Err("sleep: expected number".into()),
-                };
-                std::thread::sleep(std::time::Duration::from_secs_f64(secs));
-                Ok(Value::Null)
-            }),
-        });
-
-        self.set_var("input", Value::NativeFunction {
-            name: "input".to_string(),
-            func: Arc::new(|_vm: &mut VM, _args: Vec<Value>| {
-                let mut s = String::new();
-                io::stdin().read_line(&mut s).map_err(|e| e.to_string())?;
-                Ok(Value::String(s.trim_end().to_string()))
-            }),
-        });
-
-        self.set_var(
-            "system",
-            Value::Object ({
-                let mut h:HashMap<String, Value> = HashMap::new();
-
-                h.insert("value_type".to_string(), Value::NativeFunction{
-                    name: "type".to_string(),
-                    func: Arc::new(|_vm: &mut VM, args: Vec<Value>| {
-                        if let Some(value) = args.first() {
-                            let type_name = match value {
-                                Value::Null => "Null",
-                                Value::Integer(_) => "Integer",
-                                Value::Float(_) => "Float",
-                                Value::Boolean(_) => "Boolean",
-                                Value::String(_) => "String",
-                                Value::Array(_) => "Array",
-                                Value::Object(_) => "Object",
-                                Value::Function(_, _, _, _) => "Function",
-                                Value::NativeFunction { .. } => "NativeFunction",
-                            };
-                            Ok(Value::String(type_name.to_string()))
-                        } else {
-                            Err("type() expects one argument".to_string())
-                        }
-                    }),
-                });
-
-                h
-            })
-        );
-    }
 
     pub fn execute(&mut self, chunk: &Chunk) -> Result<Value, String> {
         self.ip = 0;
@@ -612,7 +534,7 @@ impl VM {
         }
     }
 
-    fn value_to_string(&self, value: &Value) -> String {
+    pub fn value_to_string(&self, value: &Value) -> String {
         match value {
             Value::Null => "null".to_string(),
             Value::Integer(i) => i.to_string(),

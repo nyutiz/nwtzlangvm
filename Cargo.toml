@@ -3,36 +3,8 @@ name = "nwtzlangvm"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "nwtzlangvm"
-path = "src/lib.rs"
-
-[[bin]]
-name = "nwtz"
-path = "src/main.rs"
-
-[[bin]]
-name = "nwtz-compile"
-path = "src/bin/compiler.rs"
-
-[[bin]]
-name = "nwtz-vm"
-path = "src/bin/vm_runner.rs"
-
 [dependencies]
 nwtzlang = {git = "https://github.com/nyutiz/nwtzlang"}
-strum = "0.25"
-strum_macros = "0.25"
-once_cell = "1.19"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-bincode = "1.3"
-chrono = { version = "0.4", features = ["serde"] }
-
-[dev-dependencies]
-criterion = "0.5"
-
-[features]
-default = ["debug"]
-debug = []
-optimize = []
+serde = { version = "1.0.226", features = ["derive"] }
+serde_json = "1.0.145"
+bincode = "1.3.3"

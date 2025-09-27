@@ -1,9 +1,13 @@
-
-a = null;
-
-fn hello(){
-
+fn a(h) {
+    log("Thread démarré");
+    sleep(0.1);  // Petit délai pour s'assurer que le log s'affiche
+    log("hello world from thread");
+    sleep(0.1);
+    log("Thread terminé");
 }
 
-log(system.value_type(hello));
-
+log("Programme principal démarre");
+thread.start(a);
+log("Thread lancé, attente...");
+thread.wait();
+log("Programme principal terminé");
