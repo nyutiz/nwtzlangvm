@@ -223,7 +223,7 @@ impl VM {
                     }
                 }
 
-                Instruction::Sub => {
+                Instruction::Substract => {
                     let (b, a) = self.pop_two()?;
                     match (a, b) {
                         (Value::Integer(a), Value::Integer(b)) => {
@@ -242,7 +242,7 @@ impl VM {
                     }
                 }
 
-                Instruction::Mul => {
+                Instruction::Multiply => {
                     let (b, a) = self.pop_two()?;
                     match (a, b) {
                         (Value::Integer(a), Value::Integer(b)) => {
@@ -261,7 +261,7 @@ impl VM {
                     }
                 }
 
-                Instruction::Div => {
+                Instruction::Divide => {
                     let (b, a) = self.pop_two()?;
                     match (a, b) {
                         (Value::Integer(a), Value::Integer(b)) => {
@@ -437,7 +437,7 @@ impl VM {
                                 self.stack.push(v);
                             } else {
                                 return Err(format!("Undefined property: {}", key));
-                                // ou: self.stack.push(Value::Null);
+                                // self.stack.push(Value::Null);
                             }
                         }
                         _ => return Err(format!("GetProperty: target is not an object (key = {})", key)),

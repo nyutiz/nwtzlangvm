@@ -18,9 +18,9 @@ pub enum Instruction {
 
     // Arithmetic
     Add,
-    Sub,
-    Mul,
-    Div,
+    Substract,
+    Multiply,
+    Divide,
     Mod,
 
     Equal,

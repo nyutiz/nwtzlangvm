@@ -4,10 +4,9 @@ pub mod vm;
 pub mod serialization;
 
 use std::collections::HashMap;
-use std::{io, thread};
+use std::{io, };
 use std::sync::{Arc};
 pub use nwtzlang::{ast, lexer, parser, types, runtime, environment};
-use nwtzlang::thread::ThreadManager;
 pub use crate::bytecode::{Instruction, Chunk};
 pub use crate::compiler::Compiler;
 pub use crate::vm::{VM, Value};
@@ -32,7 +31,7 @@ pub fn execute_source(source: String) -> Result<Value, String> {
 
 pub fn make_global_env(env: & mut VM) {
 
-    let thread_manager = ThreadManager::new();
+    //let thread_manager = ThreadManager::new();
 
 
     env.set_var("null", Value::Null);
@@ -110,6 +109,7 @@ pub fn make_global_env(env: & mut VM) {
         h
     }));
 
+    /*
     env.set_var("thread", mk_object({
         let mut props: HashMap<String, Value> = HashMap::new();
         let thread_manager_clone = thread_manager.clone();
@@ -139,7 +139,6 @@ pub fn make_global_env(env: & mut VM) {
 
                                 thread_vm.globals = global_vars;
 
-
                                 if let Some(Value::NativeFunction { func: log_func, .. }) = thread_vm.globals.get("log") {
                                     let log_func = log_func.clone();
                                     match log_func(&mut thread_vm, vec![Value::String(format!("Thread {} is running!", func_name))]) {
@@ -148,11 +147,6 @@ pub fn make_global_env(env: & mut VM) {
                                     }
                                 }
 
-                                // Essayer d'appeler la fonction via un chunk complet
-                                // PROBLÈME: Le bytecode de la fonction n'est pas disponible ici
-                                // Pour l'instant, on simule juste l'exécution
-                                println!("Thread {} simulated execution (start: {}, end: {}, params: {:?})",
-                                         func_name, func_start, func_end, func_params);
                             });
 
                             thread_manager_clone.handles.lock().unwrap().push(handle);
@@ -160,7 +154,6 @@ pub fn make_global_env(env: & mut VM) {
                         }
 
                         Value::NativeFunction { name, func } => {
-                            // Pour les fonctions natives, on peut les exécuter directement
                             let func_name = name.clone();
                             let func_name_for_result = name.clone();
                             let func_clone = func.clone();
@@ -170,7 +163,6 @@ pub fn make_global_env(env: & mut VM) {
                                 let mut thread_vm = VM::new();
                                 thread_vm.globals = global_vars;
 
-                                // Exécuter la fonction native
                                 match func_clone(&mut thread_vm, Vec::new()) {
                                     Ok(_) => println!("Native thread {} completed", func_name),
                                     Err(e) => eprintln!("Native thread {} failed: {}", func_name, e),
@@ -189,7 +181,6 @@ pub fn make_global_env(env: & mut VM) {
             )
         );
 
-        // thread.wait - attend tous les threads
         let thread_manager_wait = thread_manager.clone();
         props.insert(
             "wait".to_string(),
@@ -204,6 +195,7 @@ pub fn make_global_env(env: & mut VM) {
 
         props
     }));
+     */
 }
 
 

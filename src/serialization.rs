@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use nwtzlang::types::ValueType;
+use crate::{Chunk, Instruction};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SerializableInstruction {
@@ -118,93 +119,93 @@ impl From<SerializableValueType> for ValueType {
     }
 }
 
-impl From<crate::bytecode::Instruction> for SerializableInstruction {
-    fn from(inst: crate::bytecode::Instruction) -> Self {
+impl From<Instruction> for SerializableInstruction {
+    fn from(inst: Instruction) -> Self {
         match inst {
-            crate::bytecode::Instruction::LoadNull => SerializableInstruction::LoadNull,
-            crate::bytecode::Instruction::LoadInt(i) => SerializableInstruction::LoadInt(i),
-            crate::bytecode::Instruction::LoadFloat(f) => SerializableInstruction::LoadFloat(f),
-            crate::bytecode::Instruction::LoadBool(b) => SerializableInstruction::LoadBool(b),
-            crate::bytecode::Instruction::LoadString(s) => SerializableInstruction::LoadString(s),
-            crate::bytecode::Instruction::LoadVar(s) => SerializableInstruction::LoadVar(s),
-            crate::bytecode::Instruction::StoreVar(s) => SerializableInstruction::StoreVar(s),
-            crate::bytecode::Instruction::DeclareVar(s, vt) => SerializableInstruction::DeclareVar(s, vt.map(|v| v.into())),
-            crate::bytecode::Instruction::Add => SerializableInstruction::Add,
-            crate::bytecode::Instruction::Sub => SerializableInstruction::Sub,
-            crate::bytecode::Instruction::Mul => SerializableInstruction::Mul,
-            crate::bytecode::Instruction::Div => SerializableInstruction::Div,
-            crate::bytecode::Instruction::Mod => SerializableInstruction::Mod,
-            crate::bytecode::Instruction::Equal => SerializableInstruction::Equal,
-            crate::bytecode::Instruction::NotEqual => SerializableInstruction::NotEqual,
-            crate::bytecode::Instruction::Greater => SerializableInstruction::Greater,
-            crate::bytecode::Instruction::Less => SerializableInstruction::Less,
-            crate::bytecode::Instruction::GreaterEqual => SerializableInstruction::GreaterEqual,
-            crate::bytecode::Instruction::LessEqual => SerializableInstruction::LessEqual,
-            crate::bytecode::Instruction::Jump(addr) => SerializableInstruction::Jump(addr),
-            crate::bytecode::Instruction::JumpIfFalse(addr) => SerializableInstruction::JumpIfFalse(addr),
-            crate::bytecode::Instruction::JumpIfTrue(addr) => SerializableInstruction::JumpIfTrue(addr),
-            crate::bytecode::Instruction::Call(n) => SerializableInstruction::Call(n),
-            crate::bytecode::Instruction::Return => SerializableInstruction::Return,
-            crate::bytecode::Instruction::DefineFunction(name, params, start, end) =>
+            Instruction::LoadNull => SerializableInstruction::LoadNull,
+            Instruction::LoadInt(i) => SerializableInstruction::LoadInt(i),
+            Instruction::LoadFloat(f) => SerializableInstruction::LoadFloat(f),
+            Instruction::LoadBool(b) => SerializableInstruction::LoadBool(b),
+            Instruction::LoadString(s) => SerializableInstruction::LoadString(s),
+            Instruction::LoadVar(s) => SerializableInstruction::LoadVar(s),
+            Instruction::StoreVar(s) => SerializableInstruction::StoreVar(s),
+            Instruction::DeclareVar(s, vt) => SerializableInstruction::DeclareVar(s, vt.map(|v| v.into())),
+            Instruction::Add => SerializableInstruction::Add,
+            Instruction::Substract => SerializableInstruction::Sub,
+            Instruction::Multiply => SerializableInstruction::Mul,
+            Instruction::Divide => SerializableInstruction::Div,
+            Instruction::Mod => SerializableInstruction::Mod,
+            Instruction::Equal => SerializableInstruction::Equal,
+            Instruction::NotEqual => SerializableInstruction::NotEqual,
+            Instruction::Greater => SerializableInstruction::Greater,
+            Instruction::Less => SerializableInstruction::Less,
+            Instruction::GreaterEqual => SerializableInstruction::GreaterEqual,
+            Instruction::LessEqual => SerializableInstruction::LessEqual,
+            Instruction::Jump(addr) => SerializableInstruction::Jump(addr),
+            Instruction::JumpIfFalse(addr) => SerializableInstruction::JumpIfFalse(addr),
+            Instruction::JumpIfTrue(addr) => SerializableInstruction::JumpIfTrue(addr),
+            Instruction::Call(n) => SerializableInstruction::Call(n),
+            Instruction::Return => SerializableInstruction::Return,
+            Instruction::CreateObject => SerializableInstruction::CreateObject,
+            Instruction::CreateArray(n) => SerializableInstruction::CreateArray(n),
+            Instruction::GetProperty(s) => SerializableInstruction::GetProperty(s),
+            Instruction::SetProperty(s) => SerializableInstruction::SetProperty(s),
+            Instruction::GetIndex => SerializableInstruction::GetIndex,
+            Instruction::SetIndex => SerializableInstruction::SetIndex,
+            Instruction::Pop => SerializableInstruction::Pop,
+            Instruction::Duplicate => SerializableInstruction::Duplicate,
+            Instruction::Print => SerializableInstruction::Print,
+            Instruction::Halt => SerializableInstruction::Halt,
+            Instruction::DefineFunction(name, params, start, end) =>
                 SerializableInstruction::DefineFunction(name, params, start, end),
-            crate::bytecode::Instruction::CreateObject => SerializableInstruction::CreateObject,
-            crate::bytecode::Instruction::CreateArray(n) => SerializableInstruction::CreateArray(n),
-            crate::bytecode::Instruction::GetProperty(s) => SerializableInstruction::GetProperty(s),
-            crate::bytecode::Instruction::SetProperty(s) => SerializableInstruction::SetProperty(s),
-            crate::bytecode::Instruction::GetIndex => SerializableInstruction::GetIndex,
-            crate::bytecode::Instruction::SetIndex => SerializableInstruction::SetIndex,
-            crate::bytecode::Instruction::Pop => SerializableInstruction::Pop,
-            crate::bytecode::Instruction::Duplicate => SerializableInstruction::Duplicate,
-            crate::bytecode::Instruction::Print => SerializableInstruction::Print,
-            crate::bytecode::Instruction::Halt => SerializableInstruction::Halt,
         }
     }
 }
 
-impl From<SerializableInstruction> for crate::bytecode::Instruction {
+impl From<SerializableInstruction> for Instruction {
     fn from(inst: SerializableInstruction) -> Self {
         match inst {
-            SerializableInstruction::LoadNull => crate::bytecode::Instruction::LoadNull,
-            SerializableInstruction::LoadInt(i) => crate::bytecode::Instruction::LoadInt(i),
-            SerializableInstruction::LoadFloat(f) => crate::bytecode::Instruction::LoadFloat(f),
-            SerializableInstruction::LoadBool(b) => crate::bytecode::Instruction::LoadBool(b),
-            SerializableInstruction::LoadString(s) => crate::bytecode::Instruction::LoadString(s),
-            SerializableInstruction::LoadVar(s) => crate::bytecode::Instruction::LoadVar(s),
-            SerializableInstruction::StoreVar(s) => crate::bytecode::Instruction::StoreVar(s),
-            SerializableInstruction::DeclareVar(s, vt) => crate::bytecode::Instruction::DeclareVar(s, vt.map(|v| v.into())),
-            SerializableInstruction::Add => crate::bytecode::Instruction::Add,
-            SerializableInstruction::Sub => crate::bytecode::Instruction::Sub,
-            SerializableInstruction::Mul => crate::bytecode::Instruction::Mul,
-            SerializableInstruction::Div => crate::bytecode::Instruction::Div,
-            SerializableInstruction::Mod => crate::bytecode::Instruction::Mod,
-            SerializableInstruction::Equal => crate::bytecode::Instruction::Equal,
-            SerializableInstruction::NotEqual => crate::bytecode::Instruction::NotEqual,
-            SerializableInstruction::Greater => crate::bytecode::Instruction::Greater,
-            SerializableInstruction::Less => crate::bytecode::Instruction::Less,
-            SerializableInstruction::GreaterEqual => crate::bytecode::Instruction::GreaterEqual,
-            SerializableInstruction::LessEqual => crate::bytecode::Instruction::LessEqual,
-            SerializableInstruction::Jump(addr) => crate::bytecode::Instruction::Jump(addr),
-            SerializableInstruction::JumpIfFalse(addr) => crate::bytecode::Instruction::JumpIfFalse(addr),
-            SerializableInstruction::JumpIfTrue(addr) => crate::bytecode::Instruction::JumpIfTrue(addr),
-            SerializableInstruction::Call(n) => crate::bytecode::Instruction::Call(n),
-            SerializableInstruction::Return => crate::bytecode::Instruction::Return,
-            SerializableInstruction::DefineFunction(name, params, start, end) => crate::bytecode::Instruction::DefineFunction(name, params, start, end),
-            SerializableInstruction::CreateObject => crate::bytecode::Instruction::CreateObject,
-            SerializableInstruction::CreateArray(n) => crate::bytecode::Instruction::CreateArray(n),
-            SerializableInstruction::GetProperty(s) => crate::bytecode::Instruction::GetProperty(s),
-            SerializableInstruction::SetProperty(s) => crate::bytecode::Instruction::SetProperty(s),
-            SerializableInstruction::GetIndex => crate::bytecode::Instruction::GetIndex,
-            SerializableInstruction::SetIndex => crate::bytecode::Instruction::SetIndex,
-            SerializableInstruction::Pop => crate::bytecode::Instruction::Pop,
-            SerializableInstruction::Duplicate => crate::bytecode::Instruction::Duplicate,
-            SerializableInstruction::Print => crate::bytecode::Instruction::Print,
-            SerializableInstruction::Halt => crate::bytecode::Instruction::Halt,
+            SerializableInstruction::LoadNull => Instruction::LoadNull,
+            SerializableInstruction::LoadInt(i) => Instruction::LoadInt(i),
+            SerializableInstruction::LoadFloat(f) => Instruction::LoadFloat(f),
+            SerializableInstruction::LoadBool(b) => Instruction::LoadBool(b),
+            SerializableInstruction::LoadString(s) => Instruction::LoadString(s),
+            SerializableInstruction::LoadVar(s) => Instruction::LoadVar(s),
+            SerializableInstruction::StoreVar(s) => Instruction::StoreVar(s),
+            SerializableInstruction::DeclareVar(s, vt) => Instruction::DeclareVar(s, vt.map(|v| v.into())),
+            SerializableInstruction::Add => Instruction::Add,
+            SerializableInstruction::Sub => Instruction::Substract,
+            SerializableInstruction::Mul => Instruction::Multiply,
+            SerializableInstruction::Div => Instruction::Divide,
+            SerializableInstruction::Mod => Instruction::Mod,
+            SerializableInstruction::Equal => Instruction::Equal,
+            SerializableInstruction::NotEqual => Instruction::NotEqual,
+            SerializableInstruction::Greater => Instruction::Greater,
+            SerializableInstruction::Less => Instruction::Less,
+            SerializableInstruction::GreaterEqual => Instruction::GreaterEqual,
+            SerializableInstruction::LessEqual => Instruction::LessEqual,
+            SerializableInstruction::Jump(addr) => Instruction::Jump(addr),
+            SerializableInstruction::JumpIfFalse(addr) => Instruction::JumpIfFalse(addr),
+            SerializableInstruction::JumpIfTrue(addr) => Instruction::JumpIfTrue(addr),
+            SerializableInstruction::Call(n) => Instruction::Call(n),
+            SerializableInstruction::Return => Instruction::Return,
+            SerializableInstruction::DefineFunction(name, params, start, end) => Instruction::DefineFunction(name, params, start, end),
+            SerializableInstruction::CreateObject => Instruction::CreateObject,
+            SerializableInstruction::CreateArray(n) => Instruction::CreateArray(n),
+            SerializableInstruction::GetProperty(s) => Instruction::GetProperty(s),
+            SerializableInstruction::SetProperty(s) => Instruction::SetProperty(s),
+            SerializableInstruction::GetIndex => Instruction::GetIndex,
+            SerializableInstruction::SetIndex => Instruction::SetIndex,
+            SerializableInstruction::Pop => Instruction::Pop,
+            SerializableInstruction::Duplicate => Instruction::Duplicate,
+            SerializableInstruction::Print => Instruction::Print,
+            SerializableInstruction::Halt => Instruction::Halt,
         }
     }
 }
 
-impl From<crate::bytecode::Chunk> for SerializableChunk {
-    fn from(chunk: crate::bytecode::Chunk) -> Self {
+impl From<Chunk> for SerializableChunk {
+    fn from(chunk: Chunk) -> Self {
         SerializableChunk {
             instructions: chunk.instructions.into_iter().map(|i| i.into()).collect(),
             constants: chunk.constants,
@@ -218,36 +219,36 @@ impl From<crate::bytecode::Chunk> for SerializableChunk {
     }
 }
 
-impl From<SerializableChunk> for crate::bytecode::Chunk {
+impl From<SerializableChunk> for Chunk {
     fn from(chunk: SerializableChunk) -> Self {
-        crate::bytecode::Chunk {
+        Chunk {
             instructions: chunk.instructions.into_iter().map(|i| i.into()).collect(),
             constants: chunk.constants,
         }
     }
 }
 
-pub fn save_bytecode(chunk: &crate::bytecode::Chunk, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_bytecode(chunk: &Chunk, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
     let serializable: SerializableChunk = chunk.clone().into();
     let data = bincode::serialize(&serializable)?;
     std::fs::write(filename, data)?;
     Ok(())
 }
 
-pub fn load_bytecode(filename: &str) -> Result<crate::bytecode::Chunk, Box<dyn std::error::Error>> {
+pub fn load_bytecode(filename: &str) -> Result<Chunk, Box<dyn std::error::Error>> {
     let data = std::fs::read(filename)?;
     let serializable: SerializableChunk = bincode::deserialize(&data)?;
     Ok(serializable.into())
 }
 
-pub fn save_bytecode_json(chunk: &crate::bytecode::Chunk, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_bytecode_json(chunk: &Chunk, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
     let serializable: SerializableChunk = chunk.clone().into();
     let json = serde_json::to_string_pretty(&serializable)?;
     std::fs::write(filename, json)?;
     Ok(())
 }
 
-pub fn load_bytecode_json(filename: &str) -> Result<crate::bytecode::Chunk, Box<dyn std::error::Error>> {
+pub fn load_bytecode_json(filename: &str) -> Result<Chunk, Box<dyn std::error::Error>> {
     let json = std::fs::read_to_string(filename)?;
     let serializable: SerializableChunk = serde_json::from_str(&json)?;
     Ok(serializable.into())

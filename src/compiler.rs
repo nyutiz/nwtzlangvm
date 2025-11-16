@@ -77,9 +77,9 @@ impl Compiler {
 
                 match binary.operator.as_str() {
                     "+" => self.chunk.add_instruction(Instruction::Add),
-                    "-" => self.chunk.add_instruction(Instruction::Sub),
-                    "*" => self.chunk.add_instruction(Instruction::Mul),
-                    "/" => self.chunk.add_instruction(Instruction::Div),
+                    "-" => self.chunk.add_instruction(Instruction::Substract),
+                    "*" => self.chunk.add_instruction(Instruction::Multiply),
+                    "/" => self.chunk.add_instruction(Instruction::Divide),
                     "%" => self.chunk.add_instruction(Instruction::Mod),
                     "==" => self.chunk.add_instruction(Instruction::Equal),
                     "!=" => self.chunk.add_instruction(Instruction::NotEqual),
